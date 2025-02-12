@@ -1,0 +1,73 @@
+1. Start SonarQube Server using Docker
+Run the following command to start a SonarQube server using Docker:
+
+sh
+Copy
+Edit
+docker run -d --name sonarqube \
+  -p 9000:9000 \
+  -p 9092:9092 \
+  -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
+  sonarqube:lts-community
+Explanation:
+-d → Runs in detached mode.
+--name sonarqube → Container name.
+-p 9000:9000 → Maps SonarQube UI port (http://localhost:9000).
+-p 9092:9092 → Maps internal communication port.
+-e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true → Bypasses bootstrap checks (useful for local testing).
+sonarqube:lts-community → Uses the latest LTS community edition.
+Wait for SonarQube to start (it may take a few minutes).
+Once started, open http://localhost:9000 in your browser.
+
+Default Credentials:
+Username: admin
+Password: admin
+2. Generate a SonarQube Token
+Log in to SonarQube UI (http://localhost:9000).
+Go to "My Account" > "Security".
+Click "Generate Token" (e.g., sonar-token).
+Copy and save the token for later use.
+3. Configure Sonar in Your Maven Project
+Edit your project's pom.xml to include the SonarQube Scanner plugin:
+
+xml
+Copy
+Edit
+<properties>
+    <sonar.host.url>http://localhost:9000</sonar.host.url>
+</properties>
+
+<build>
+    <plugins>
+        <plugin>
+            <groupId>org.sonarsource.scanner.maven</groupId>
+            <artifactId>sonar-maven-plugin</artifactId>
+            <version>3.9.1.2184</version>
+        </plugin>
+    </plugins>
+</build>
+4. Run SonarQube Analysis
+Run the following command to analyze your Maven project:
+
+sh
+Copy
+Edit
+mvn clean verify sonar:sonar -Dsonar.token=your-sonar-token
+Optional Parameters:
+Specify project key:
+sh
+Copy
+Edit
+mvn sonar:sonar -Dsonar.projectKey=my_project
+Specify source encoding:
+sh
+Copy
+Edit
+mvn sonar:sonar -Dsonar.sourceEncoding=UTF-8
+5. View SonarQube Report
+Once the scan is complete:
+
+Open http://localhost:9000.
+Go to Projects > my_project.
+Check the code quality and security analysis results.
+
