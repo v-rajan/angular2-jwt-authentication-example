@@ -1,73 +1,104 @@
-1. Start SonarQube Server using Docker
-Run the following command to start a SonarQube server using Docker:
+add jms/q_002 to be linked to IBM mq jndi
+
+ChatGPT said:
+Updated Dockerfile for WildFly
+This updated Dockerfile will:
+
+Deploy Two EAR Files to WildFly.
+Configure JDBC Resources for IBM Db2 (ADB2).
+Configure JMS Queue (jms/q_002) linked to IBM MQ.
+Modify standalone.xml using a WildFly CLI script.
+Dockerfile
+dockerfile
+Copy
+Edit
+FROM jboss/wildfly:latest
+
+# Set working directory
+WORKDIR /opt/jboss/wildfly
+
+# Copy EAR files for deployment
+COPY myapp1.ear /opt/jboss/wildfly/standalone/deployments/
+COPY myapp2.ear /opt/jboss/wildfly/standalone/deployments/
+
+# Copy IBM Db2 JDBC driver
+COPY db2jcc4.jar /opt/jboss/wildfly/standalone/deployments/
+
+# Copy IBM MQ JMS driver
+COPY com.ibm.mq.allclient.jar /opt/jboss/wildfly/standalone/deployments/
+
+# Copy CLI script for configuring the datasource and JMS queue
+COPY configure-wildfly.cli /opt/jboss/wildfly/configure-wildfly.cli
+
+# Run CLI script to configure the datasource and JMS queue
+RUN /opt/jboss/wildfly/bin/jboss-cli.sh --file=/opt/jboss/wildfly/configure-wildfly.cli
+
+# Expose WildFly ports
+EXPOSE 8080 9990
+
+# Start WildFly
+CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-b", "0.0.0.0"]
+CLI Script (configure-wildfly.cli)
+This script:
+
+Adds IBM Db2 JDBC Driver (db2jcc4.jar).
+Creates a Datasource (ADB2DS) for IBM Db2.
+Configures a JMS Queue (jms/q_002) linked to IBM MQ.
+Sets up a JNDI entry (java:/jms/q_002).
+plaintext
+Copy
+Edit
+embed-server --std-out=echo --server-config=standalone.xml
+
+# Add IBM Db2 JDBC Driver
+/subsystem=datasources/jdbc-driver=db2:add(driver-name=db2, driver-module-name=com.ibm.db2, driver-class-name=com.ibm.db2.jcc.DB2Driver)
+
+# Configure IBM Db2 Datasource
+/subsystem=datasources/data-source=ADB2DS:add(jndi-name=java:/ADB2DS, driver-name=db2, connection-url=jdbc:db2://db2host:50000/mydatabase, user-name=myuser, password=mypassword, min-pool-size=5, max-pool-size=20, enabled=true)
+
+# Add IBM MQ JMS Connection Factory
+/subsystem=messaging-activemq/server=default/jms-connection-factory=IBM_MQ_CF:add(entries=[java:/jms/IBM_MQ_CF], connectors=[http-connector])
+
+# Configure IBM MQ Queue Destination
+/subsystem=messaging-activemq/server=default/jms-queue=jms/q_002:add(entries=[java:/jms/q_002])
+
+stop-embedded-server
+Building & Running the WildFly Container
+1. Build the Docker Image
+sh
+Copy
+Edit
+docker build -t wildfly-adb2-mq .
+2. Run the Container
+sh
+Copy
+Edit
+docker run -p 8080:8080 -p 9990:9990 wildfly-adb2-mq
+Testing the Setup
+1. Check Datasource in WildFly Admin Console
+Open http://localhost:9990
+Navigate to Configuration → Subsystems → Datasources
+Verify if ADB2DS appears.
+2. Check JMS Queue
+Navigate to Configuration → Subsystems → Messaging → Default Server → Queues
+Ensure jms/q_002 exists.
+3. Test the IBM MQ Connection
+Run:
 
 sh
 Copy
 Edit
-docker run -d --name sonarqube \
-  -p 9000:9000 \
-  -p 9092:9092 \
-  -e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true \
-  sonarqube:lts-community
-Explanation:
--d → Runs in detached mode.
---name sonarqube → Container name.
--p 9000:9000 → Maps SonarQube UI port (http://localhost:9000).
--p 9092:9092 → Maps internal communication port.
--e SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true → Bypasses bootstrap checks (useful for local testing).
-sonarqube:lts-community → Uses the latest LTS community edition.
-Wait for SonarQube to start (it may take a few minutes).
-Once started, open http://localhost:9000 in your browser.
+docker exec -it <container_id> /opt/jboss/wildfly/bin/jboss-cli.sh --connect
+Then:
 
-Default Credentials:
-Username: admin
-Password: admin
-2. Generate a SonarQube Token
-Log in to SonarQube UI (http://localhost:9000).
-Go to "My Account" > "Security".
-Click "Generate Token" (e.g., sonar-token).
-Copy and save the token for later use.
-3. Configure Sonar in Your Maven Project
-Edit your project's pom.xml to include the SonarQube Scanner plugin:
-
-xml
+plaintext
 Copy
 Edit
-<properties>
-    <sonar.host.url>http://localhost:9000</sonar.host.url>
-</properties>
+/subsystem=messaging-activemq/server=default/jms-queue=jms/q_002:read-resource
+Summary
+✅ Deploys Two EAR Files
+✅ Configures JDBC Datasource for IBM Db2 (ADB2DS)
+✅ Creates a JMS Queue (jms/q_002) linked to IBM MQ
+✅ Sets up JNDI Resources (java:/jms/q_002)
 
-<build>
-    <plugins>
-        <plugin>
-            <groupId>org.sonarsource.scanner.maven</groupId>
-            <artifactId>sonar-maven-plugin</artifactId>
-            <version>3.9.1.2184</version>
-        </plugin>
-    </plugins>
-</build>
-4. Run SonarQube Analysis
-Run the following command to analyze your Maven project:
-
-sh
-Copy
-Edit
-mvn clean verify sonar:sonar -Dsonar.token=your-sonar-token
-Optional Parameters:
-Specify project key:
-sh
-Copy
-Edit
-mvn sonar:sonar -Dsonar.projectKey=my_project
-Specify source encoding:
-sh
-Copy
-Edit
-mvn sonar:sonar -Dsonar.sourceEncoding=UTF-8
-5. View SonarQube Report
-Once the scan is complete:
-
-Open http://localhost:9000.
-Go to Projects > my_project.
-Check the code quality and security analysis results.
-
+Would you like additional configurations, such as XA transactions, security settings, or clustering? 🚀
