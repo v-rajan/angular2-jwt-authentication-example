@@ -1,9 +1,0 @@
-embed-server --std-out=echo --server-config=standalone.xml
-
-# Add the IBM Db2 JDBC driver
-/subsystem=datasources/jdbc-driver=db2:add(driver-name=db2, driver-module-name=com.ibm.db2, driver-class-name=com.ibm.db2.jcc.DB2Driver)
-
-# Configure IBM Db2 Datasource
-/subsystem=datasources/data-source=ADB2DS:add(jndi-name=java:/ADB2DS, driver-name=db2, connection-url=jdbc:db2://db2host:50000/mydatabase, user-name=myuser, password=mypassword, min-pool-size=5, max-pool-size=20, enabled=true)
-
-stop-embedded-server
