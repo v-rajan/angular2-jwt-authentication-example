@@ -1,0 +1,39 @@
+embed-server --std-out=echo --server-config=standalone-full.xml --timeout=120
+
+# ----------------------------
+# Configure MySQL Datasource
+# ----------------------------
+/subsystem=datasources/jdbc-driver=mysql:add(driver-name="mysql", driver-module-name="com.mysql", driver-class-name="com.mysql.cj.jdbc.Driver")
+
+/subsystem=datasources/data-source=MySQLDS:add(jndi-name="java:/MySQLDS",driver-name="mysql",connection-url="jdbc:mysql://10.131.2.161:3306/mydatabase?useSSL=falseserverTimezone=UTC",user-name="root",password="root",min-pool-size=5,max-pool-size=20,use-ccm=true,enabled=true,valid-connection-checker-class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLValidConnectionChecker",exception-sorter-class-name="org.jboss.jca.adapters.jdbc.extensions.mysql.MySQLExceptionSorter")
+
+# ----------------------------
+# Add IBM MQ Resource Adapter (Ensure .rar file exists)
+# ----------------------------
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra:add(archive=wmq.jmsra.rar, transaction-support=XATransaction)
+
+# Configure IBM MQ Connection Properties
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=hostName:add(value="mq.example.com")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=port:add(value="1414")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=channel:add(value="DEV.APP.SVRCONN")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=queueManager:add(value="QM1")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=userName:add(value="appUser")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/config-properties=password:add(value="appPassword")
+
+# ----------------------------
+# Add IBM MQ Connection Factory
+# ----------------------------
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf:add(class-name="com.ibm.mq.connector.outbound.ManagedConnectionFactoryImpl",jndi-name="java:/jms/RemoteConnectionFactory",enabled=true)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=transportType:add(value="CLIENT")
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=min-pool-size:add(value="1")
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=max-pool-size:add(value="10")
+
+# ----------------------------
+# Add IBM MQ JMS Queue
+# ----------------------------
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/admin-objects=wmq-queue:add(class-name="com.ibm.mq.connector.outbound.MQQueueProxy",jndi-name="java:/jms/queue/testQueue",enabled=true,use-java-context=true)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/admin-objects=wmq-queue/config-properties=baseQueueName:add(value="DEV.QUEUE.1")
+
+# Save and exit
+stop-embedded-server
