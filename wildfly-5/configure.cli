@@ -1,0 +1,32 @@
+embed-server --std-out=echo --server-config=standalone-full.xml --timeout=120
+
+# ----------------------------
+# Configure IBM MQ Resource Adapter (RAR Deployment)
+# ----------------------------
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra:add(archive=wmq.jmsra-9.0.5.0.rar, transaction-support=XATransaction)
+
+# Configure IBM MQ Connection Properties at the Resource Adapter Level
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf:add(class-name=com.ibm.mq.connector.outbound.ManagedConnectionFactoryImpl,jndi-name=java:/jms/RemoteConnectionFactory,enabled=true,use-java-context=true)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=transportType:add(value=CLIENT)
+#/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=min-pool-size:add(value=1)
+#/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=max-pool-size:add(value=10)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=hostName:add(value=192.168.0.209)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=port:add(value=1414)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=channel:add(value=DEV.APP.SVRCONN)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=queueManager:add(value=DEVQMGR)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=userName:add(value=admin)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/connection-definitions=wmq-cf/config-properties=password:add(value=passw0rd)
+
+
+# ----------------------------
+# Add IBM MQ JMS Queue
+# ----------------------------
+#/subsystem=resource-adapters/resource-adapter=wmq.jmsra/admin-objects=wmq-queue:add(class-name=com.ibm.mq.connector.outbound.MQQueueProxy, jndi-name=java:/jms/queue/testQueue,enabled=true,use-java-context=true)
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/admin-objects=wmq-queue:add(class-name="com.ibm.mq.connector.outbound.MQQueueProxy",jndi-name="java:jboss/exported/jms/queue/testQueue",enabled=true,use-java-context=true)
+
+/subsystem=resource-adapters/resource-adapter=wmq.jmsra/admin-objects=wmq-queue/config-properties=baseQueueName:add(value=DEV.QUEUE.1)
+
+# Save and exit
+stop-embedded-server

@@ -1,0 +1,1 @@
+./bin/jboss-cli.sh --connect --command="/subsystem=resource-adapters/resource-adapter=wmq.jmsra:read-resource(include-runtime=true,recursive=true)"
