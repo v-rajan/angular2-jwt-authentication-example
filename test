@@ -1,45 +1,161 @@
-🔹 CLI Script (configure-adb2-mq.cli)
-This script:
+Share
 
-Adds IBM Db2 Datasource (cts_ds).
-Configures IBM MQ Connection Factory and Queue.
-plaintext
+
+You said:
+Docker Compose install in windows
+ChatGPT said:
+To install Docker Compose on Windows, follow these steps:
+
+Prerequisites
+Install Docker Desktop for Windows (Docker Compose is included).
+Ensure Windows Subsystem for Linux (WSL 2) is enabled if running in a Linux environment.
+Method 1: Install via Docker Desktop (Recommended)
+Download and Install Docker Desktop
+
+Go to: Docker Desktop for Windows
+Install Docker Desktop and ensure Docker Compose is selected during installation.
+Restart your system if required.
+Verify Installation
+Open PowerShell or Command Prompt and run:
+
+sh
 Copy
 Edit
-connect
+docker compose version
+If you see a version number, Docker Compose is installed.
 
-# Add the IBM Db2 JDBC driver module
-/subsystem=datasources/jdbc-driver=db2:add(driver-name=db2, driver-module-name=com.ibm.db2, driver-class-name=com.ibm.db2.jcc.DB2Driver)
+Method 2: Install Docker Compose Standalone (If Needed)
+If you need a standalone installation of Docker Compose:
 
-# Add Db2 Datasource (CTS_DS)
-/subsystem=datasources/data-source=cts_ds:add(
-    jndi-name=java:/jdbc/cts_ds,
-    driver-name=db2,
-    connection-url=jdbc:db2://db2host:50000/mydatabase,
-    user-name=myuser,
-    password=mypassword,
-    min-pool-size=5,
-    max-pool-size=20,
-    enabled=true
-)
+Download the latest Docker Compose binary
+Open PowerShell and run:
 
-# Add IBM MQ Resource Adapter
-/subsystem=resource-adapters/resource-adapter=wmq:add(archive=com.ibm.mq.allclient.jar)
+sh
+Copy
+Edit
+curl -L https://github.com/docker/compose/releases/latest/download/docker-compose-windows-x86_64.exe -o C:\Windows\System32\docker-compose.exe
+Verify Installation
+Run:
 
-# Configure Connection Factory for IBM MQ
-/subsystem=resource-adapters/resource-adapter=wmq/connection-definitions=WMQCF:add(
-    jndi-name=java:/jms/WMQCF,
-    class-name=com.ibm.mq.jms.MQConnectionFactory,
-    enabled=true
-)
+sh
+Copy
+Edit
+docker-compose --version
+Common Issues & Fixes
+Docker Compose command not found?
+Ensure docker-compose.exe is in C:\Windows\System32 or add it to PATH.
 
-/subsystem=resource-adapters/resource-adapter=wmq/connection-definitions=WMQCF/config-properties=hostName:add(value=mqhost)
-/subsystem=resource-adapters/resource-adapter=wmq/connection-definitions=WMQCF/config-properties=port:add(value=1414)
-/subsystem=resource-adapters/resource-adapter=wmq/connection-definitions=WMQCF/config-properties=channel:add(value=DEV.ADMIN.SVRCONN)
-/subsystem=resource-adapters/resource-adapter=wmq/connection-definitions=WMQCF/config-properties=queueManager:add(value=QM1)
+WSL 2 integration issues?
+Enable WSL 2 by running:
 
-# Configure IBM MQ Queue
-/subsystem=messaging-activemq/server=default/jms-queue=MY_QUEUE:add(entries=["java:/jms/queue/MY_QUEUE"])
+sh
+Copy
+Edit
+wsl --set-default-version 2
+Let me know if you need help setting up your docker-compose.yml file! 🚀
 
-reload
+
+
+
+
+
+
+You said:
+gibe a docker compose file to run 2 sprignboot and a postgresql database 
+ChatGPT said:
+Here's a docker-compose.yml file to run two Spring Boot applications along with a PostgreSQL database. It defines a network for communication and uses Docker volumes to persist PostgreSQL data.
+
+docker-compose.yml
+yaml
+Copy
+Edit
+version: "3.9"
+
+services:
+  postgres-db:
+    image: postgres:15
+    container_name: postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+      POSTGRES_DB: mydatabase
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - springboot-network
+
+  app1:
+    image: my-springboot-app1:latest  # Replace with your actual image name
+    container_name: springboot-app1
+    depends_on:
+      - postgres-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/mydatabase
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: mypassword
+    ports:
+      - "8081:8080"
+    networks:
+      - springboot-network
+
+  app2:
+    image: my-springboot-app2:latest  # Replace with your actual image name
+    container_name: springboot-app2
+    depends_on:
+      - postgres-db
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres-db:5432/mydatabase
+      SPRING_DATASOURCE_USERNAME: myuser
+      SPRING_DATASOURCE_PASSWORD: mypassword
+    ports:
+      - "8082:8080"
+    networks:
+      - springboot-network
+
+networks:
+  springboot-network:
+
+volumes:
+  postgres_data:
+How to Use
+Build your Spring Boot application images
+Replace my-springboot-app1 and my-springboot-app2 with the actual image names of your Spring Boot applications.
+
+sh
+Copy
+Edit
+docker build -t my-springboot-app1 .
+docker build -t my-springboot-app2 .
+Run the services
+
+sh
+Copy
+Edit
+docker-compose up -d
+Check Running Containers
+
+sh
+Copy
+Edit
+docker ps
+Access Your Applications
+
+App 1: http://localhost:8081
+App 2: http://localhost:8082
+PostgreSQL: postgresql://localhost:5432/mydatabase
+Notes
+This setup ensures both Spring Boot apps communicate with the PostgreSQL database via springboot-network.
+depends_on ensures the database starts before the apps, but you may need a proper wait-for-it mechanism.
+The database credentials should be managed securely, e.g., using environment variables or Docker secrets.
+Let me know if you need further tweaks! 🚀
+
+
+
+
+
+
+
 
